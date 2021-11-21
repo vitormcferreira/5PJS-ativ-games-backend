@@ -58,6 +58,9 @@ class JogoDaMemoria:
     def gera_aleatorio(self):
         return str(randint(0, 9))
 
+    def jogo_encerrado(self):
+        return self.acertos == self.objetivo
+
 
 if __name__ == '__main__':
     from pprint import pprint
