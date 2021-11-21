@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # https://www.django-rest-framework.org/tutorial/quickstart/
     'rest_framework',
     'corsheaders',
+    'jogo_da_memoria',
 ]
 
 MIDDLEWARE = [
