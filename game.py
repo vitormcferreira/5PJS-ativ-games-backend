@@ -48,6 +48,13 @@ class JogoDaMemoria:
 
         return True
 
+    def parse_cartas(self):
+        cartas = []
+        for x, y in self.cartas:
+            cartas.extend([x, y])
+        cartas.sort()  # coloca em ordem crescente embaralhando tudo
+        return cartas
+
     def gera_aleatorio(self):
         return str(randint(0, 9))
 
