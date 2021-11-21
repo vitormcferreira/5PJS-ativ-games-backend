@@ -56,7 +56,7 @@ class JogoDaMemoria:
         return cartas
 
     def gera_aleatorio(self):
-        return str(randint(0, 9))
+        return str(randint(0, 9999999999))
 
     def jogo_encerrado(self):
         return self.acertos == self.objetivo
