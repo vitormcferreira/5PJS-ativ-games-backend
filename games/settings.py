@@ -140,3 +140,5 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
+
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
