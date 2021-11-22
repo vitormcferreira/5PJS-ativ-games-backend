@@ -5,7 +5,7 @@ class JogoDaMemoria:
     valores = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 
     def __init__(self, linhas):
-        self.cartas = self.novas_cartas(linhas)
+        self.cartas = self._novas_cartas(linhas)
         self.jogadas = 0
         self.acertos = 0
         self.objetivo = linhas + 1  # quantidade de acertos final
@@ -14,7 +14,7 @@ class JogoDaMemoria:
     def novo_jogo(linhas):
         return JogoDaMemoria(linhas)
 
-    def novas_cartas(self, linhas):
+    def _novas_cartas(self, linhas):
         '''
         linhas = 2
         colunas = linhas + 1 = 3
@@ -58,7 +58,7 @@ class JogoDaMemoria:
         cartas.sort()  # coloca em ordem crescente embaralhando tudo
         return cartas
 
-    def gera_aleatorio(self):
+    def _gera_aleatorio(self):
         return str(randint(0, 9999999999))
 
     def jogo_encerrado(self):
