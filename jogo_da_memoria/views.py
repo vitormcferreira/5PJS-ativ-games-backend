@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from . import exceptions
 
 
-class Jogo(views.APIView):
+class JogoAPIView(views.APIView):
+
     def get(self, request: Request):
         jogo: JogoDaMemoria = self.request.session.get('jogo')
 
