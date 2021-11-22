@@ -28,23 +28,26 @@ class JogoDaMemoria:
         qtd_cartas = linhas + 1
         cartas = {
             # TODO: fazer com que nunca ocorra chaves iguais
-            (self.gera_aleatorio(), self.gera_aleatorio()): carta
+            (self._gera_aleatorio(), self._gera_aleatorio()): carta
             for carta in self.valores[:qtd_cartas]
         }
         return cartas
 
     def faz_movimento(self, h1, h2):
         self.jogadas += 1
-        carta = None
-        try:
-            # deixei carta em variavel para ser possivel usar depois
-            carta = self.cartas.pop((h1, h2))
-            self.acertos += 1
-        except:
-            return False
 
-        if self.acertos == self.objetivo:
-            raise Exception('Fim de jogo')
+        existe_carta = self.cartas.get((h1, h2))
+        if existe_carta:
+            del self.cartas[(h1, h2)]
+
+        existe_carta = self.cartas.get((h2, h1))
+        if existe_carta:
+            del self.cartas[(h2, h1)]
+
+        if existe_carta:
+            self.acertos += 1
+        else:
+            return False
 
         return True
 
