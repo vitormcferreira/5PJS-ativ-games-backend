@@ -62,7 +62,7 @@ class JogoDaMemoria:
         return str(randint(0, 9999999999))
 
     def jogo_encerrado(self):
-        return self.acertos == self.objetivo
+        return self.acertos >= self.objetivo
 
 
 if __name__ == '__main__':
