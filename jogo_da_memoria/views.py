@@ -50,6 +50,7 @@ class JogoAPIView(views.APIView):
         }
 
         if movimento_correto:
+            dict_response.update(valor_carta=movimento_correto)
             return Response(dict_response)
         else:
             raise exceptions.MovimentoIncorretoError(dict_response)

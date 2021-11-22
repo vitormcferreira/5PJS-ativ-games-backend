@@ -36,20 +36,16 @@ class JogoDaMemoria:
     def faz_movimento(self, h1, h2):
         self.jogadas += 1
 
-        existe_carta = self.cartas.get((h1, h2))
-        if existe_carta:
-            del self.cartas[(h1, h2)]
+        # avaliação de curto-circuito, retorna (h1, h2) ou (h2, h1)
+        carta = ((h1, h2) in self.cartas and (h1, h2)) or \
+            ((h2, h1) in self.cartas and (h2, h1))
 
-        existe_carta = self.cartas.get((h2, h1))
-        if existe_carta:
-            del self.cartas[(h2, h1)]
+        if not carta:
+            return None
 
-        if existe_carta:
-            self.acertos += 1
-        else:
-            return False
-
-        return True
+        self.acertos += 1
+        valor_carta = self.cartas.pop(carta)
+        return valor_carta
 
     def parse_cartas(self):
         cartas = []
