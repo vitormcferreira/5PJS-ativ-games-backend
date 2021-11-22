@@ -32,7 +32,6 @@ class JogoAPIView(views.APIView):
         if not carta1 or not carta2:
             raise exceptions.CartaEmFaltaError()
 
-        movimento_correto = False
         movimento_correto = jogo.faz_movimento(carta1, carta2)
 
         self.request.session['jogo'] = jogo
