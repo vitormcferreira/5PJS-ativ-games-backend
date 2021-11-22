@@ -35,22 +35,22 @@ class JogoAPIView(views.APIView):
         if not carta1 or not carta2:
             raise exceptions.CartaEmFaltaError()
 
-        movimento_correto = jogo.faz_movimento(carta1, carta2)
+        valor_carta = jogo.faz_movimento(carta1, carta2)
 
         self.request.session['jogo'] = jogo
-
-        if jogo.jogo_encerrado():
-            return Response(status=250)
 
         dict_response = {
             'carta1': carta1,
             'carta2': carta2,
             'jogadas': str(jogo.jogadas),
             'acertos': str(jogo.acertos),
+            'valor_carta': valor_carta,
         }
 
-        if movimento_correto:
-            dict_response.update(valor_carta=movimento_correto)
+        if jogo.jogo_encerrado():
+            return Response(dict_response, status=250)
+
+        if valor_carta:
             return Response(dict_response)
         else:
             raise exceptions.MovimentoIncorretoError(dict_response)
