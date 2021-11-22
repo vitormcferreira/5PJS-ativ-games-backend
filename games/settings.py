@@ -39,8 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # https://www.django-rest-framework.org/tutorial/quickstart/
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'jogo_da_memoria',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -142,3 +144,5 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+
+AUTH_USER_MODEL = 'accounts.Usuario'

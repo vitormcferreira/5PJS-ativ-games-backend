@@ -2,11 +2,14 @@ from game import JogoDaMemoria
 from rest_framework import views
 from rest_framework.request import Request
 from rest_framework.response import Response
-
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from . import exceptions
 
 
 class JogoAPIView(views.APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
         jogo: JogoDaMemoria = self.request.session.get('jogo')
