@@ -1,10 +1,14 @@
+from django.db.models.query import QuerySet
 from game import JogoDaMemoria
-from rest_framework import views
+from rest_framework import views, generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+
 from . import exceptions
+from .models import Ranking
+from .serializers import RankingSerializer
 
 
 class JogoAPIView(views.APIView):
@@ -48,9 +52,41 @@ class JogoAPIView(views.APIView):
         }
 
         if jogo.jogo_encerrado():
+            erros = jogo.jogadas - jogo.acertos
+            Ranking.objects.create(
+                usuario=self.request.user, jogadas=jogo.jogadas, erros=erros)
             return Response(dict_response, status=250)
 
         if valor_carta:
             return Response(dict_response)
         else:
             raise exceptions.MovimentoIncorretoError(dict_response)
+
+
+class RankingListAPIView(generics.ListAPIView):
+    queryset = Ranking.objects.all()
+    serializer_class = RankingSerializer
+
+    def normalizar_dados(self, data):
+        result = [{
+            'jogadas': obj['jogadas'],
+            'erros': obj['erros'],
+            'user_data': {
+                'id': obj['usuario']['id'],
+                'username': obj['usuario']['username'],
+            }
+        } for obj in data]
+        return result
+
+    def list(self, request, *args, **kwargs):
+        queryset: QuerySet = self.filter_queryset(self.get_queryset())
+
+        queryset = queryset.select_related('usuario')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(self.normalizar_dados(serializer.data))
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(self.normalizar_dados(serializer.data))
