@@ -2,63 +2,56 @@ from random import randint
 
 
 class JogoDaMemoria:
-    valores = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+    valores_cartas = [i for i in range(50)]
 
     def __init__(self, linhas):
         self.cartas = self._novas_cartas(linhas)
         self.jogadas = 0
         self.acertos = 0
-        self.objetivo = linhas + 1  # quantidade de acertos final
+        self.parsed_cartas = self.__parse_cartas()
 
     @staticmethod
     def novo_jogo(linhas):
         return JogoDaMemoria(linhas)
 
     def _novas_cartas(self, linhas):
-        '''
-        linhas = 2
-        colunas = linhas + 1 = 3
-        qtd_cartas = ((linhas * colunas) / linhas) = colunas = 3
-        cartas={
-            (hash1,hash2):a,
-            (hash1,hash2):b,
-            (hash1,hash2):c,
-        }
-        '''
         qtd_cartas = linhas + 1
-        cartas = {
-            # TODO: fazer com que nunca ocorra chaves iguais
-            (self._gera_aleatorio(), self._gera_aleatorio()): carta
-            for carta in self.valores[:qtd_cartas]
-        }
+        cartas = dict()
+        for i in range(qtd_cartas):
+            carta = self.valores_cartas[i]
+            cartas[self._gera_aleatorio()] = carta
+            cartas[self._gera_aleatorio()] = carta
         return cartas
 
     def faz_movimento(self, h1, h2):
-        self.jogadas += 1
-
-        # avaliação de curto-circuito, retorna (h1, h2) ou (h2, h1)
-        carta = ((h1, h2) in self.cartas and (h1, h2)) or \
-            ((h2, h1) in self.cartas and (h2, h1))
-
-        if not carta:
+        if self.jogo_encerrado():
             return None
 
-        self.acertos += 1
-        valor_carta = self.cartas.pop(carta)
-        return valor_carta
+        self.jogadas += 1
 
-    def parse_cartas(self):
+        carta1 = self.cartas.get(h1)
+        carta2 = self.cartas.get(h2)
+
+        if carta1 == carta2 and carta1 != None and carta2 != None:
+            self.acertos += 1
+            del self.cartas[h1]
+            del self.cartas[h2]
+
+        return carta1, carta2
+
+    def __parse_cartas(self):
         cartas = []
-        for x, y in self.cartas:
-            cartas.extend([x, y])
+        for x in self.cartas:
+            cartas.append(x)
         cartas.sort()  # coloca em ordem crescente embaralhando tudo
+
         return cartas
 
     def _gera_aleatorio(self):
         return str(randint(0, 9999999999))
 
     def jogo_encerrado(self):
-        return self.acertos >= self.objetivo
+        return len(self.cartas) == 0
 
 
 if __name__ == '__main__':
@@ -70,6 +63,7 @@ if __name__ == '__main__':
         print('jogadas: ', game.jogadas)
         print('acertos: ', game.acertos)
         pprint(game.cartas)
+        print(game.parsed_cartas)
 
         entrada = input('insira dois numeros n1 n2: ')
         n1, n2 = entrada.split(' ')

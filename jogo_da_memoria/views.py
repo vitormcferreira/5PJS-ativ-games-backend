@@ -24,7 +24,7 @@ class JogoAPIView(views.APIView):
         self.request.session['jogo'] = jogo
 
         return Response({
-            'jogo': jogo.parse_cartas()
+            'jogo': jogo.parsed_cartas
         })
 
     def post(self, request: Request):
@@ -39,16 +39,17 @@ class JogoAPIView(views.APIView):
         if not carta1 or not carta2:
             raise exceptions.CartaEmFaltaError()
 
-        valor_carta = jogo.faz_movimento(carta1, carta2)
+        valor_carta1, valor_carta2 = jogo.faz_movimento(carta1, carta2)
 
         self.request.session['jogo'] = jogo
 
         dict_response = {
             'carta1': carta1,
             'carta2': carta2,
+            'valor_carta1': valor_carta1,
+            'valor_carta2': valor_carta2,
             'jogadas': str(jogo.jogadas),
             'acertos': str(jogo.acertos),
-            'valor_carta': valor_carta,
         }
 
         if jogo.jogo_encerrado():
@@ -57,7 +58,7 @@ class JogoAPIView(views.APIView):
                 usuario=self.request.user, jogadas=jogo.jogadas, erros=erros)
             return Response(dict_response, status=250)
 
-        if valor_carta:
+        if valor_carta1 == valor_carta2:
             return Response(dict_response)
         else:
             raise exceptions.MovimentoIncorretoError(dict_response)
