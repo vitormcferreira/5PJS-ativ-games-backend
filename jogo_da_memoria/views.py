@@ -63,6 +63,11 @@ class JogoAPIView(views.APIView):
         else:
             raise exceptions.MovimentoIncorretoError(dict_response)
 
+    def delete(self, request: Request):
+        if self.request.session.get('jogo'):
+            del self.request.session['jogo']
+        return True
+
 
 class RankingListAPIView(generics.ListAPIView):
     queryset = Ranking.objects.all()
