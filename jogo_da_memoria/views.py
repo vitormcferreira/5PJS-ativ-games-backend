@@ -76,7 +76,7 @@ class JogoAPIView(views.APIView):
                     jogadas=jogo.jogadas,
                     erros=erros,
                 )
-            return Response(dict_response, status=250)
+            return Response(dict_response)
 
         if valor_carta1 == valor_carta2:
             return Response(dict_response)
