@@ -95,6 +95,7 @@ class RankingListAPIView(generics.ListAPIView):
 
     def normalizar_dados(self, data):
         result = [{
+            'id': obj['id'],
             'jogadas': obj['jogadas'],
             'erros': obj['erros'],
             'user_data': {
