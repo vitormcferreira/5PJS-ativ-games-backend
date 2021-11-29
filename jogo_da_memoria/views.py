@@ -1,14 +1,12 @@
 from django.db.models.query import QuerySet
-from game import JogoDaMemoria
 from rest_framework import views, generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from . import exceptions
-from .models import Ranking
-from .serializers import RankingSerializer
+from .models import Ranking, JogoDaMemoria
+from .serializers import RankingSerializer, JogoDaMemoriaSerializer
 
 
 class JogoAPIView(views.APIView):
@@ -21,15 +19,15 @@ class JogoAPIView(views.APIView):
         salva na sessão e retorna os números das cartas.
         Caso já exista um jogo instanciado, retorna o jogo.
         """
-        jogo: JogoDaMemoria = self.request.session.get('jogo')
+        try:
+            jogo = JogoDaMemoria.objects.get(usuario=self.request.user)
+        except JogoDaMemoria.DoesNotExist:
+            jogo = JogoDaMemoria.novo_jogo(self.request.user)
 
-        if not jogo or jogo.jogo_encerrado():
-            jogo = JogoDaMemoria.novo_jogo(3)
-
-        self.request.session['jogo'] = jogo
+        serializer = JogoDaMemoriaSerializer(jogo)
 
         return Response({
-            'jogo': jogo.parsed_cartas
+            'jogo': serializer.data
         })
 
     def post(self, request: Request):
@@ -38,55 +36,51 @@ class JogoAPIView(views.APIView):
         Retorna as cartas enviadas, os valores das cartas, acertos e jogadas.
         Caso o jogo tenha encerrado, registra a pontuação do jogador.
         """
-        jogo: JogoDaMemoria = self.request.session.get('jogo')
+        try:
+            jogo: JogoDaMemoria = JogoDaMemoria.objects.get(
+                usuario=self.request.user)
+            carta1 = request.data['carta1']
+            carta2 = request.data['carta2']
 
-        if not jogo:
-            raise exceptions.JogoInexistenteError()
+            valor_carta1, valor_carta2 = jogo.faz_movimento(carta1, carta2)
 
-        carta1 = request.data.get('carta1')
-        carta2 = request.data.get('carta2')
+            serializer = JogoDaMemoriaSerializer(jogo)
 
-        if not carta1 or not carta2:
-            raise exceptions.CartaEmFaltaError()
+            # salva o ranking do usuario
+            if jogo.jogo_encerrado():
+                erros = jogo.jogadas - jogo.acertos
+                try:
+                    ranking_usuario = Ranking.objects.get(
+                        usuario=self.request.user)
+                    if ranking_usuario.erros > erros:
+                        ranking_usuario.erros = erros
+                        ranking_usuario.save()
+                except:
+                    ranking_usuario = Ranking.objects.create(
+                        usuario=self.request.user,
+                        jogadas=jogo.jogadas,
+                        erros=erros,
+                    )
 
-        valor_carta1, valor_carta2 = jogo.faz_movimento(carta1, carta2)
+            # resposta padrão
+            dict_response = {
+                'carta1': carta1,
+                'carta2': carta2,
+                'valor_carta1': valor_carta1,
+                'valor_carta2': valor_carta2,
+                'jogo': serializer.data,
+            }
 
-        self.request.session['jogo'] = jogo
-
-        dict_response = {
-            'carta1': carta1,
-            'carta2': carta2,
-            'valor_carta1': valor_carta1,
-            'valor_carta2': valor_carta2,
-            'jogadas': str(jogo.jogadas),
-            'acertos': str(jogo.acertos),
-        }
-
-        if jogo.jogo_encerrado():
-            erros = jogo.jogadas - jogo.acertos
-            try:
-                ranking_usuario = Ranking.objects.get(
-                    usuario=self.request.user)
-                if ranking_usuario.erros > erros:
-                    ranking_usuario.erros = erros
-                    ranking_usuario.save()
-            except:
-                ranking_usuario = Ranking.objects.create(
-                    usuario=self.request.user,
-                    jogadas=jogo.jogadas,
-                    erros=erros,
-                )
-            return Response(dict_response)
-
-        if valor_carta1 == valor_carta2:
-            return Response(dict_response)
-        else:
-            raise exceptions.MovimentoIncorretoError(dict_response)
+            if valor_carta1 == valor_carta2:
+                return Response(dict_response)
+            else:
+                return Response(dict_response, status=406)
+        except:
+            return Response(status=404)
 
     def delete(self, request: Request):
-        if self.request.session.get('jogo'):
-            del self.request.session['jogo']
-        return True
+        JogoDaMemoria.objects.filter(usuario=self.request.user).delete()
+        return Response()
 
 
 class RankingListAPIView(generics.ListAPIView):
