@@ -54,8 +54,18 @@ class JogoAPIView(views.APIView):
 
         if jogo.jogo_encerrado():
             erros = jogo.jogadas - jogo.acertos
-            Ranking.objects.create(
-                usuario=self.request.user, jogadas=jogo.jogadas, erros=erros)
+            try:
+                ranking_usuario = Ranking.objects.get(
+                    usuario=self.request.user)
+                if ranking_usuario.erros > erros:
+                    ranking_usuario.erros = erros
+                    ranking_usuario.save()
+            except:
+                ranking_usuario = Ranking.objects.create(
+                    usuario=self.request.user,
+                    jogadas=jogo.jogadas,
+                    erros=erros,
+                )
             return Response(dict_response, status=250)
 
         if valor_carta1 == valor_carta2:
