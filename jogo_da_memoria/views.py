@@ -16,6 +16,11 @@ class JogoAPIView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request):
+        """
+        Caso não exista nenhum jogo instanciado pelo jogador, cria um novo, 
+        salva na sessão e retorna os números das cartas.
+        Caso já exista um jogo instanciado, retorna o jogo.
+        """
         jogo: JogoDaMemoria = self.request.session.get('jogo')
 
         if not jogo or jogo.jogo_encerrado():
@@ -28,6 +33,11 @@ class JogoAPIView(views.APIView):
         })
 
     def post(self, request: Request):
+        """
+        Recebe um par de cartas e faz um movimento.
+        Retorna as cartas enviadas, os valores das cartas, acertos e jogadas.
+        Caso o jogo tenha encerrado, registra a pontuação do jogador.
+        """
         jogo: JogoDaMemoria = self.request.session.get('jogo')
 
         if not jogo:
@@ -95,6 +105,9 @@ class RankingListAPIView(generics.ListAPIView):
         return result
 
     def list(self, request, *args, **kwargs):
+        """
+        Retorna uma lista com o ranking.
+        """
         queryset: QuerySet = self.filter_queryset(self.get_queryset())
 
         queryset = queryset.select_related('usuario')

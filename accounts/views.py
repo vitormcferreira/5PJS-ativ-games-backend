@@ -10,6 +10,9 @@ from .models import Usuario
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
+        """
+        Recebe username e senha, retorna um token caso autenticado.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -28,6 +31,12 @@ class CustomAuthToken(ObtainAuthToken):
 class UserCreateAPIView(generics.CreateAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
+
+    def post(self, request, *args, **kwargs):
+        """
+        Recebe username e senha do usuário e efetua o cadastro.
+        """
+        return super().post(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = UsuarioSerializer(data=request.data)
