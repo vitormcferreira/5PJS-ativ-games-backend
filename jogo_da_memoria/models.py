@@ -73,10 +73,9 @@ class JogoDaMemoria(models.Model):
         return carta1, carta2
 
     @classmethod
-    def _novas_cartas(cls, linhas):
-        qtd_cartas = linhas + 1
+    def _novas_cartas(cls, qtd_pares):
         cartas = dict()
-        for i in range(qtd_cartas):
+        for i in range(qtd_pares):
             cartas[cls._gera_aleatorio()] = i
             cartas[cls._gera_aleatorio()] = i
         return cartas
