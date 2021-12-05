@@ -64,10 +64,6 @@ class JogoAPIView(views.APIView):
 
             # resposta padrão
             dict_response = {
-                'carta1': carta1,
-                'carta2': carta2,
-                'valor_carta1': valor_carta1,
-                'valor_carta2': valor_carta2,
                 'jogo': serializer.data,
             }
 
