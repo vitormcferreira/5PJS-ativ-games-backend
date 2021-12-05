@@ -1,5 +1,5 @@
 from django.db import models
-from random import randint
+from random import randint, shuffle
 from accounts.models import Usuario
 
 
@@ -13,6 +13,7 @@ class JogoDaMemoria(models.Model):
     usuario = models.OneToOneField(
         to=Usuario, on_delete=models.CASCADE, unique=True)
     cartas = models.JSONField()
+    # par (valor_carta, numero, encontrado)
     parsed_cartas = models.JSONField()
     jogadas = models.IntegerField()
     acertos = models.IntegerField()
@@ -65,7 +66,7 @@ class JogoDaMemoria(models.Model):
     def __parse_cartas(cartas):
         parsed_cartas = []
         for x in cartas:
-            parsed_cartas.append(x)
-        parsed_cartas.sort()  # coloca em ordem crescente embaralhando tudo
+            parsed_cartas.append((x, None, False))
+        shuffle(parsed_cartas)
 
         return parsed_cartas
