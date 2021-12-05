@@ -19,8 +19,8 @@ class JogoDaMemoria(models.Model):
     acertos = models.IntegerField()
 
     @classmethod
-    def novo_jogo(cls, usuario, linhas=3):
-        cartas = cls._novas_cartas(linhas)
+    def novo_jogo(cls, usuario, qtd_pares=6):
+        cartas = cls._novas_cartas(qtd_pares)
 
         instance = cls.objects.create(
             usuario=usuario,
