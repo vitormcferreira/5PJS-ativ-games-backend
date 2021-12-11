@@ -45,6 +45,10 @@ class JogoAPIView(views.APIView):
             valor_carta1, valor_carta2 = jogo.faz_movimento(carta1, carta2)
 
             serializer = JogoDaMemoriaSerializer(jogo)
+            # resposta padrão
+            dict_response = {
+                'jogo': serializer.data,
+            }
 
             # salva o ranking do usuario
             if jogo.jogo_encerrado():
@@ -61,11 +65,8 @@ class JogoAPIView(views.APIView):
                         jogadas=jogo.jogadas,
                         erros=erros,
                     )
-
-            # resposta padrão
-            dict_response = {
-                'jogo': serializer.data,
-            }
+                    
+                    return Response(dict_response, status=250)
 
             if valor_carta1 == valor_carta2:
                 return Response(dict_response)
