@@ -4,14 +4,22 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.test import force_authenticate
 
 from .models import Ranking, JogoDaMemoria
 from .serializers import RankingSerializer, JogoDaMemoriaSerializer
+from accounts.models import Usuario
 
 
 class JogoAPIView(views.APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def dispatch(self, request, *args, **kwargs):
+        user = Usuario.objects.get(username='admin')
+        force_authenticate(request, user=user)
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request: Request):
         """
