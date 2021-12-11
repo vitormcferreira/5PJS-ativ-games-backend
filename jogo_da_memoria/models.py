@@ -44,6 +44,7 @@ class JogoDaMemoria(models.Model):
         retorna.
         """
         self.jogadas += 1
+        self.save()
 
         carta1 = self.cartas.get(h1)
         carta2 = self.cartas.get(h2)
