@@ -81,7 +81,7 @@ class JogoAPIView(views.APIView):
 
 
 class RankingListAPIView(generics.ListAPIView):
-    queryset = Ranking.objects.all()
+    queryset = Ranking.objects.all().order_by('erros')
     serializer_class = RankingSerializer
 
     def normalizar_dados(self, data):
