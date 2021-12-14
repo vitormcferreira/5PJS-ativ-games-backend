@@ -1,3 +1,5 @@
+from django.db import transaction
+from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from rest_framework import views, generics
 from rest_framework.request import Request
@@ -13,101 +15,118 @@ class JogoAPIView(views.APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+    QTD_CARTAS = 6
+
+    PAR_CORRETO_STATUS_CODE = 240
+    JOGO_ENCERRADO_STATUS_CODE = 250
+
     def get(self, request: Request):
         """
-        Caso não exista nenhum jogo instanciado pelo jogador, cria um novo, 
-        salva na sessão e retorna os números das cartas.
-        Caso já exista um jogo instanciado, retorna o jogo.
+        Retorna um jogo existente ou um novo.
         """
         try:
             jogo = JogoDaMemoria.objects.get(usuario=self.request.user)
         except JogoDaMemoria.DoesNotExist:
-            jogo = JogoDaMemoria.novo_jogo(self.request.user)
+            jogo = JogoDaMemoria.novo_jogo(self.request.user, self.QTD_CARTAS)
 
         serializer = JogoDaMemoriaSerializer(jogo)
 
         return Response({
-            'jogo': serializer.data
+            **serializer.data
         })
 
     def post(self, request: Request):
-        """
-        Recebe um par de cartas e faz um movimento.
-        Retorna as cartas enviadas, os valores das cartas, acertos e jogadas.
-        Caso o jogo tenha encerrado, registra a pontuação do jogador.
-        """
+        status_code = 200
         try:
+            # obter carta
+            carta = request.data['carta']
+
             jogo: JogoDaMemoria = JogoDaMemoria.objects.get(
                 usuario=self.request.user)
-            carta1 = request.data['carta1']
-            carta2 = request.data['carta2']
 
-            valor_carta1, valor_carta2 = jogo.faz_movimento(carta1, carta2)
+            valor_carta = jogo.cartas_map[carta]
 
-            serializer = JogoDaMemoriaSerializer(jogo)
-            # resposta padrão
-            dict_response = {
-                'jogo': serializer.data,
-            }
+            if jogo.carta_anterior:
+                if jogo.carta_anterior['carta'] == carta:
+                    # são a mesma carta
+                    raise
 
-            # salva o ranking do usuario
-            if jogo.jogo_encerrado():
-                erros = jogo.jogadas - jogo.acertos
-                try:
-                    ranking_usuario = Ranking.objects.get(
-                        usuario=self.request.user)
-                    if ranking_usuario.erros > erros:
-                        ranking_usuario.erros = erros
-                        ranking_usuario.save()
-                except:
-                    ranking_usuario = Ranking.objects.create(
-                        usuario=self.request.user,
-                        jogadas=jogo.jogadas,
-                        erros=erros,
-                    )
+                jogo.jogadas += 1
 
-                return Response(dict_response, status=250)
+                # se as cartas forem um par
+                if jogo.cartas_map[jogo.carta_anterior['carta']] == valor_carta:
+                    # remove o par
+                    del jogo.cartas_map[carta]
+                    del jogo.cartas_map[jogo.carta_anterior['carta']]
 
-            if valor_carta1 == valor_carta2:
-                return Response(dict_response)
+                    # incrementa acertos
+                    jogo.acertos += 1
+                    status_code = self.PAR_CORRETO_STATUS_CODE
+
+                    # atualiza valor_carta de jogo.cartas com o valor correto
+                    for obj in jogo.cartas:
+                        if obj['carta'] == jogo.carta_anterior['carta'] or \
+                                obj['carta'] == carta:
+                            obj['valor_carta'] = valor_carta
+
+                    # se o jogo acabou, atualiza o ranking do jogador
+                    if jogo.is_jogo_encerrado():
+                        status_code = self.JOGO_ENCERRADO_STATUS_CODE
+
+                        # https://qastack.com.br/programming/21458387/transactionmanagementerror-you-cant-execute-queries-until-the-end-of-the-atom
+                        with transaction.atomic():
+                            ranking = Ranking.objects.filter(
+                                usuario=self.request.user)
+
+                            # se possui ranking cadastrado
+                            if ranking.exists():
+                                # se a pontuação foi melhor, então atualiza
+                                if ranking.get().erros > jogo.jogadas:
+                                    ranking.update(
+                                        erros=jogo.jogadas - self.QTD_CARTAS)
+                            else:
+                                # se nao possui ranking cadastrado,
+                                # entao cadastra
+                                Ranking.objects.create(
+                                    usuario=self.request.user,
+                                    erros=jogo.jogadas - self.QTD_CARTAS,
+                                )
+
+                jogo.carta_anterior = None
             else:
-                return Response(dict_response, status=406)
-        except:
+                jogo.carta_anterior = {
+                    'carta': carta, 'valor_carta': valor_carta}
+
+            jogo.save()
+
+            response = {
+                'valor_carta': valor_carta,
+            }
+            return Response(response, status_code)
+        except Exception as e:
             return Response(status=404)
 
     def delete(self, request: Request):
+        """
+        Apaga o jogo atual.
+        """
         JogoDaMemoria.objects.filter(usuario=self.request.user).delete()
         return Response()
 
 
 class RankingListAPIView(generics.ListAPIView):
-    queryset = Ranking.objects.all().order_by('erros')
+    queryset = Ranking.objects.all().annotate(
+        username=F('usuario__username'),
+    ).order_by('erros').values('erros', 'username')[:10]
     serializer_class = RankingSerializer
 
-    def normalizar_dados(self, data):
-        result = [{
-            'id': obj['id'],
-            'jogadas': obj['jogadas'],
-            'erros': obj['erros'],
-            'user_data': {
-                'id': obj['usuario']['id'],
-                'username': obj['usuario']['username'],
-            }
-        } for obj in data]
-        return result
-
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args, **kwargs):
         """
         Retorna uma lista com o ranking.
         """
-        queryset: QuerySet = self.filter_queryset(self.get_queryset())
-
-        queryset = queryset.select_related('usuario')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(self.normalizar_dados(serializer.data))
+        queryset = self.get_queryset()
 
         serializer = self.get_serializer(queryset, many=True)
-        return Response(self.normalizar_dados(serializer.data))
+        return Response({
+            'results': serializer.data
+        })
