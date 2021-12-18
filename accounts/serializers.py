@@ -7,7 +7,7 @@ from .models import Usuario
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'password']
+        fields = ['username', 'password']
         # https://www.django-rest-framework.org/api-guide/serializers/#additional-keyword-arguments
         extra_kwargs = {'password': {'write_only': True,
                                      'validators': [validate_password]}}
