@@ -21,9 +21,7 @@ class CustomAuthToken(ObtainAuthToken):
         token, _ = Token.objects.get_or_create(user=usuario)
 
         return Response({
-            'user_data': {
-                'username': usuario.username,
-            },
+            'username': usuario.username,
             'token': token.key,
         })
 
@@ -37,22 +35,3 @@ class UserCreateAPIView(generics.CreateAPIView):
         Recebe username e senha do usuário e efetua o cadastro.
         """
         return super().post(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        serializer = UsuarioSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        # usuario = Usuario.objects.get(
-        #     username=serializer.initial_data['username'],
-        # )
-        # token, _ = Token.objects.get_or_create(user=usuario)
-
-        return Response({
-            'user_data': {
-                'username': {
-                    'username': serializer.data['username']
-                }
-            },
-            # 'token': token.key,
-        })
